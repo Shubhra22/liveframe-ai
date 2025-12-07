@@ -1,7 +1,8 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { SelectionState } from '../types';
-import { FloatingMenu } from './FloatingMenu';
-import { Check } from 'lucide-react';
+import React, { useRef, useEffect } from 'react';
+import grapesjs from 'grapesjs';
+import 'grapesjs/dist/css/grapes.min.css';
+import gjsPresetNewsletter from 'grapesjs-preset-newsletter';
+import './grapesjs-custom.css';
 
 interface LiveCanvasProps {
   html: string;
@@ -9,326 +10,285 @@ interface LiveCanvasProps {
 }
 
 export const LiveCanvas: React.FC<LiveCanvasProps> = ({ html, onHtmlChange }) => {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [selection, setSelection] = useState<SelectionState>({
-    element: null,
-    type: 'unknown',
-    rect: null,
-  });
-  const [isEditing, setIsEditing] = useState(false);
-  const [iframeLoaded, setIframeLoaded] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const grapesjsInstance = useRef<any>(null);
 
-  // Initial Content Injection
+  // Initialize GrapeJS
   useEffect(() => {
-    const iframe = iframeRef.current;
-    if (iframe) {
-        // We write to doc to support scripts execution
-        const doc = iframe.contentDocument;
-        if (doc) {
-            doc.open();
-            doc.write(html);
-            // Inject editor styles
-            doc.write(`
-              <style>
-                .live-editor-selected {
-                  outline: 2px solid #3b82f6 !important;
-                  outline-offset: -2px;
-                  cursor: pointer;
-                  position: relative;
-                  z-index: 9999;
-                }
-                .live-editor-hover:not(.live-editor-selected) {
-                  outline: 2px dashed #60a5fa !important;
-                  outline-offset: -2px;
-                  cursor: pointer;
-                  z-index: 9999;
-                }
-                body { margin: 0; min-height: 100vh; }
-                /* Hide scrollbars for cleaner editor feel if needed */
-                ::-webkit-scrollbar { width: 8px; height: 8px; }
-                ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
-              </style>
-            `);
-            doc.close();
-            setIframeLoaded(true);
+    if (!editorRef.current || grapesjsInstance.current) return;
+
+    const editor = grapesjs.init({
+      container: editorRef.current,
+      height: '100%',
+      width: '100%',
+      fromElement: false,
+      storageManager: false,
+      
+      // Use newsletter preset for email-friendly components
+      plugins: [gjsPresetNewsletter],
+      pluginsOpts: {
+        'gjs-preset-newsletter': {
+          modalTitleImport: 'Import Template',
+          keepInlineStyles: true,
         }
+      },
+
+      // Canvas settings
+      canvas: {
+        styles: [],
+        scripts: [],
+      },
+
+      // CRITICAL: Preserve inline styles for email compatibility
+      avoidInlineStyle: false,
+      
+      // Keep default wrapper off to preserve email structure
+      wrapperIsBody: true,
+      
+      // Parser options to keep inline styles and attributes
+      parser: {
+        optionsHtml: {
+          allowScripts: false,
+          allowUnsafeAttr: true,
+        },
+      },
+      
+      // Device manager for responsive preview
+      deviceManager: {
+        devices: [
+          {
+            id: 'desktop',
+            name: 'Desktop',
+            width: '',
+          },
+          {
+            id: 'mobile',
+            name: 'Mobile',
+            width: '375px',
+            widthMedia: '480px',
+          },
+        ],
+      },
+
+      // Panels configuration - minimal UI
+      panels: {
+        defaults: [
+          {
+            id: 'basic-actions',
+            el: '.panel__basic-actions',
+            buttons: [
+              {
+                id: 'visibility',
+                active: true,
+                className: 'btn-toggle-borders',
+                label: '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M15,9H9V15H15M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"></path></svg>',
+                command: 'sw-visibility',
+              },
+            ],
+          },
+          {
+            id: 'panel-devices',
+            el: '.panel__devices',
+            buttons: [
+              {
+                id: 'device-desktop',
+                label: '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M21,16H3V4H21M21,2H3C1.89,2 1,2.89 1,4V16A2,2 0 0,0 3,18H10V20H8V22H16V20H14V18H21A2,2 0 0,0 23,16V4C23,2.89 22.1,2 21,2Z"></path></svg>',
+                command: 'set-device-desktop',
+                active: true,
+                togglable: false,
+              },
+              {
+                id: 'device-mobile',
+                label: '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M17,19H7V5H17M17,1H7C5.89,1 5,1.89 5,3V21A2,2 0 0,0 7,23H17A2,2 0 0,0 19,21V3C19,1.89 18.1,1 17,1Z"></path></svg>',
+                command: 'set-device-mobile',
+                togglable: false,
+              },
+            ],
+          },
+        ],
+      },
+
+      // Block manager
+      blockManager: {
+        appendTo: '.blocks-container',
+      },
+
+      // Layer manager
+      layerManager: {
+        appendTo: '.layers-container',
+      },
+
+      // Style manager
+      styleManager: {
+        appendTo: '.styles-container',
+        sectors: [
+          {
+            name: 'General',
+            open: true,
+            properties: [
+              'float',
+              'display',
+              'position',
+              'top',
+              'right',
+              'left',
+              'bottom',
+            ],
+          },
+          {
+            name: 'Dimension',
+            open: false,
+            properties: [
+              'width',
+              'height',
+              'max-width',
+              'min-height',
+              'margin',
+              'padding',
+            ],
+          },
+          {
+            name: 'Typography',
+            open: false,
+            properties: [
+              'font-family',
+              'font-size',
+              'font-weight',
+              'letter-spacing',
+              'color',
+              'line-height',
+              'text-align',
+              'text-decoration',
+            ],
+          },
+          {
+            name: 'Decorations',
+            open: false,
+            properties: [
+              'background-color',
+              'border-radius',
+              'border',
+              'box-shadow',
+            ],
+          },
+        ],
+      },
+
+      // Trait manager
+      traitManager: {
+        appendTo: '.traits-container',
+      },
+    });
+
+    grapesjsInstance.current = editor;
+
+    // Load initial HTML - parse the full document
+    if (html) {
+      // Extract body content if it's a full HTML document
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const bodyContent = doc.body ? doc.body.innerHTML : html;
+      
+      editor.setComponents(bodyContent);
+      
+      // Extract and set any style tags
+      const styleTags = doc.querySelectorAll('style');
+      let cssContent = '';
+      styleTags.forEach(style => {
+        cssContent += style.textContent || '';
+      });
+      if (cssContent) {
+        editor.setStyle(cssContent);
+      }
     }
-  }, [html]); // Note: In a real app we might want to diff updates instead of full reload, but full reload ensures scripts run correctly.
 
-  // Event Listeners for Iframe
-  useEffect(() => {
-    if (!iframeLoaded || !iframeRef.current) return;
-
-    const iframe = iframeRef.current;
-    const doc = iframe.contentDocument;
-    if (!doc) return;
-
-    const handleMouseOver = (e: Event) => {
-      if (isEditing) return;
-      if (selection.element) return;
+    // Listen for changes and update parent
+    editor.on('update', () => {
+      // Get HTML with inline styles preserved
+      const updatedHtml = editor.getHtml();
+      const updatedCss = editor.getCss();
       
-      const target = e.target as HTMLElement;
-      if (target === doc.body || target === doc.documentElement) return;
-      target.classList.add('live-editor-hover');
-    };
-
-    const handleMouseOut = (e: Event) => {
-      const target = e.target as HTMLElement;
-      target.classList.remove('live-editor-hover');
-    };
-
-    const handleClick = (e: Event) => {
-      const mouseEvent = e as MouseEvent;
+      // Reconstruct full HTML document for email
+      const fullHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    ${updatedCss ? `<style>${updatedCss}</style>` : ''}
+</head>
+<body>
+${updatedHtml}
+</body>
+</html>`;
       
-      if (isEditing) {
-         if (selection.element && selection.element.contains(e.target as Node)) {
-           return; 
-         }
-         // Prevent navigation if clicking links while editing
-         e.preventDefault();
-         return;
-      }
-
-      e.preventDefault();
-      e.stopPropagation();
-
-      const target = e.target as HTMLElement;
-      
-      if (target === doc.body || target === doc.documentElement) {
-        clearSelection();
-        return;
-      }
-
-      selectElement(target);
-    };
-
-    const handleScroll = () => {
-        if (selection.element) {
-            updateSelectionRect(selection.element);
-        }
-    };
-
-    doc.addEventListener('mouseover', handleMouseOver);
-    doc.addEventListener('mouseout', handleMouseOut);
-    doc.addEventListener('click', handleClick);
-    doc.addEventListener('scroll', handleScroll);
-    iframe.contentWindow?.addEventListener('scroll', handleScroll);
+      onHtmlChange(fullHtml);
+    });
 
     return () => {
-      doc.removeEventListener('mouseover', handleMouseOver);
-      doc.removeEventListener('mouseout', handleMouseOut);
-      doc.removeEventListener('click', handleClick);
-      doc.removeEventListener('scroll', handleScroll);
-      iframe.contentWindow?.removeEventListener('scroll', handleScroll);
-    };
-  }, [iframeLoaded, selection.element, isEditing]);
-
-  const updateSelectionRect = (el: HTMLElement) => {
-    if (!iframeRef.current) return;
-    const iframeRect = iframeRef.current.getBoundingClientRect();
-    const elRect = el.getBoundingClientRect();
-    
-    // Convert iframe-relative coords to screen coords
-    setSelection(prev => ({
-        ...prev,
-        element: el,
-        rect: new DOMRect(
-            iframeRect.left + elRect.left,
-            iframeRect.top + elRect.top,
-            elRect.width,
-            elRect.height
-        )
-    }));
-  };
-
-  const selectElement = (el: HTMLElement) => {
-    if (selection.element) {
-      selection.element.classList.remove('live-editor-selected');
-    }
-
-    el.classList.add('live-editor-selected');
-    el.classList.remove('live-editor-hover');
-
-    let type: SelectionState['type'] = 'container';
-    const tagName = el.tagName.toLowerCase();
-    
-    if (tagName === 'img') type = 'image';
-    else if (tagName === 'button' || tagName === 'a') type = 'button';
-    else if (
-        (el.childNodes.length === 1 && el.childNodes[0].nodeType === Node.TEXT_NODE) || 
-        (el.innerText && el.children.length === 0)
-    ) {
-        type = 'text';
-    }
-
-    updateSelectionRect(el);
-    // Explicitly set type in state update since updateSelectionRect depends on prev state which might not have type
-    setSelection(prev => ({...prev, type}));
-  };
-
-  const clearSelection = () => {
-    if (selection.element) {
-      selection.element.classList.remove('live-editor-selected');
-      selection.element.contentEditable = "false";
-    }
-    setSelection({ element: null, type: 'unknown', rect: null });
-    setIsEditing(false);
-  };
-
-  const handleUpdate = useCallback(() => {
-    const iframe = iframeRef.current;
-    if (iframe && iframe.contentDocument) {
-      const doc = iframe.contentDocument;
-      
-      // Remove our editor classes before exporting
-      const selected = doc.querySelectorAll('.live-editor-selected');
-      const hovered = doc.querySelectorAll('.live-editor-hover');
-      selected.forEach(el => el.classList.remove('live-editor-selected'));
-      hovered.forEach(el => el.classList.remove('live-editor-hover'));
-      
-      const editables = doc.querySelectorAll('[contenteditable]');
-      editables.forEach(el => el.removeAttribute('contenteditable'));
-
-      // If the body contains our root div (like in the React example), we might want just that?
-      // Or usually full HTML. For email, we want full HTML.
-      const htmlContent = doc.documentElement.outerHTML;
-      onHtmlChange(htmlContent);
-
-      // Re-add selection class if needed to keep visual state
-      if (selection.element) {
-          selection.element.classList.add('live-editor-selected');
-          updateSelectionRect(selection.element);
-      }
-    }
-  }, [onHtmlChange, selection.element]);
-
-  const startEditing = () => {
-    if (selection.element) {
-      // If it's an image, trigger file picker instead
-      if (selection.type === 'image') {
-        fileInputRef.current?.click();
-        return;
-      }
-      
-      setIsEditing(true);
-      selection.element.contentEditable = "true";
-      selection.element.focus();
-    }
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !selection.element) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      if (selection.element && selection.element.tagName.toLowerCase() === 'img') {
-        (selection.element as HTMLImageElement).src = dataUrl;
-        handleUpdate();
+      if (grapesjsInstance.current) {
+        grapesjsInstance.current.destroy();
+        grapesjsInstance.current = null;
       }
     };
-    reader.readAsDataURL(file);
-    
-    // Reset input so same file can be selected again
-    e.target.value = '';
-  };
+  }, []);
 
-  const finishEditing = () => {
-    if (selection.element) {
-      // Preserve computed styles before disabling contentEditable
-      const iframe = iframeRef.current;
-      if (iframe && iframe.contentWindow) {
-        const computedStyle = iframe.contentWindow.getComputedStyle(selection.element);
-        
-        // Preserve font-related styles if they're not already inline
-        const fontProps = [
-          'font-family',
-          'font-size',
-          'font-weight',
-          'font-style',
-          'color',
-          'line-height',
-          'letter-spacing',
-          'text-align',
-          'text-decoration'
-        ];
-        
-        fontProps.forEach(prop => {
-          const currentInline = selection.element!.style.getPropertyValue(prop);
-          if (!currentInline) {
-            const computedValue = computedStyle.getPropertyValue(prop);
-            if (computedValue && computedValue !== 'normal' && computedValue !== 'none') {
-              selection.element!.style.setProperty(prop, computedValue);
-            }
-          }
-        });
-      }
-      
-      selection.element.contentEditable = "false";
-      handleUpdate();
-      setIsEditing(false);
-    }
-  };
-
-  // Keep rects in sync if window resizes
+  // Update GrapeJS content when HTML prop changes
   useEffect(() => {
-    const handleResize = () => {
-      if (selection.element) {
-        updateSelectionRect(selection.element);
+    if (grapesjsInstance.current && html) {
+      const currentHtml = grapesjsInstance.current.getHtml();
+      // Only update if HTML actually changed to avoid infinite loops
+      if (currentHtml !== html) {
+        grapesjsInstance.current.setComponents(html);
       }
-    };
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('scroll', handleResize, true);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('scroll', handleResize, true);
-    };
-  }, [selection.element]);
+    }
+  }, [html]);
 
   return (
-    <div className="relative w-full h-full">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleImageUpload}
-        className="hidden"
-      />
-      <iframe 
-        ref={iframeRef}
-        className="w-full h-full border-none bg-white"
-        title="Live Canvas"
-        sandbox="allow-scripts allow-same-origin allow-popups"
-      />
-
-      {/* Floating Menu or Done Button */}
-      {selection.element && !isEditing && (
-        <FloatingMenu 
-          selection={selection} 
-          onClose={clearSelection} 
-          onUpdate={handleUpdate}
-          onEditStart={startEditing}
-        />
-      )}
-
-      {isEditing && selection.rect && (
-        <div 
-          className="fixed z-50 flex items-center gap-2"
-          style={{
-            top: `${Math.max(10, selection.rect.top - 50)}px`,
-            left: `${selection.rect.left}px`,
-          }}
-        >
-          <button 
-            onClick={finishEditing}
-            className="flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-full shadow-lg font-medium text-xs animate-in fade-in zoom-in duration-200"
-          >
-            <Check size={14} /> Done Editing
-          </button>
+    <div className="relative w-full h-full flex">
+      {/* Left Sidebar - Blocks */}
+      <div className="w-64 bg-neutral-900 border-r border-neutral-800 overflow-y-auto">
+        <div className="p-3 border-b border-neutral-800">
+          <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">Blocks</h3>
         </div>
-      )}
+        <div className="blocks-container p-2"></div>
+      </div>
+
+      {/* Main Editor Canvas */}
+      <div className="flex-1 flex flex-col">
+        {/* Top Toolbar */}
+        <div className="h-12 bg-neutral-900 border-b border-neutral-800 flex items-center justify-between px-4">
+          <div className="panel__devices flex gap-2"></div>
+          <div className="panel__basic-actions"></div>
+        </div>
+
+        {/* Canvas */}
+        <div ref={editorRef} className="flex-1 bg-neutral-100"></div>
+      </div>
+
+      {/* Right Sidebar - Layers & Styles */}
+      <div className="w-64 bg-neutral-900 border-l border-neutral-800 overflow-y-auto">
+        <div className="border-b border-neutral-800">
+          <div className="p-3">
+            <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">Layers</h3>
+          </div>
+          <div className="layers-container px-2 pb-3"></div>
+        </div>
+        
+        <div className="border-b border-neutral-800">
+          <div className="p-3">
+            <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">Styles</h3>
+          </div>
+          <div className="styles-container px-2 pb-3"></div>
+        </div>
+
+        <div>
+          <div className="p-3">
+            <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">Settings</h3>
+          </div>
+          <div className="traits-container px-2 pb-3"></div>
+        </div>
+      </div>
     </div>
   );
 };

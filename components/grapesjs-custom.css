@@ -1,0 +1,186 @@
+/* GrapeJS Custom Dark Theme */
+
+/* Blocks Panel */
+.blocks-container .gjs-block {
+  background: #262626;
+  border: 1px solid #404040;
+  color: #d4d4d4;
+  border-radius: 4px;
+  margin: 4px;
+  padding: 8px;
+  transition: all 0.2s;
+}
+
+.blocks-container .gjs-block:hover {
+  background: #404040;
+  border-color: #525252;
+}
+
+.blocks-container .gjs-block-label {
+  font-size: 11px;
+  color: #a3a3a3;
+}
+
+/* Layers Panel */
+.layers-container {
+  background: transparent;
+}
+
+.gjs-layer {
+  background: transparent;
+  color: #d4d4d4;
+  font-size: 12px;
+}
+
+.gjs-layer:hover {
+  background: #262626;
+}
+
+.gjs-layer.gjs-selected {
+  background: #404040;
+}
+
+/* Style Manager */
+.styles-container {
+  background: transparent;
+  color: #d4d4d4;
+}
+
+.gjs-sm-sector {
+  background: transparent;
+  border-bottom: 1px solid #404040;
+}
+
+.gjs-sm-sector-title {
+  background: #262626;
+  color: #d4d4d4;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.gjs-sm-property {
+  background: transparent;
+  color: #d4d4d4;
+  border-bottom: 1px solid #404040;
+}
+
+.gjs-sm-label {
+  color: #a3a3a3;
+  font-size: 11px;
+}
+
+.gjs-field,
+.gjs-field input,
+.gjs-field select {
+  background: #262626;
+  border: 1px solid #404040;
+  color: #d4d4d4;
+  font-size: 11px;
+}
+
+.gjs-field:focus,
+.gjs-field input:focus,
+.gjs-field select:focus {
+  border-color: #525252;
+  outline: none;
+}
+
+/* Traits Panel */
+.traits-container {
+  background: transparent;
+  color: #d4d4d4;
+}
+
+.gjs-trt-trait {
+  background: transparent;
+  border-bottom: 1px solid #404040;
+  padding: 8px;
+}
+
+.gjs-label-wrp {
+  color: #a3a3a3;
+  font-size: 11px;
+}
+
+/* Toolbar Buttons */
+.panel__basic-actions button,
+.panel__devices button {
+  background: #262626;
+  border: 1px solid #404040;
+  color: #d4d4d4;
+  padding: 6px 10px;
+  margin: 0 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.panel__basic-actions button:hover,
+.panel__devices button:hover {
+  background: #404040;
+  border-color: #525252;
+}
+
+.panel__basic-actions button.gjs-pn-active,
+.panel__devices button.gjs-pn-active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+}
+
+/* Canvas Frame */
+.gjs-cv-canvas {
+  background: #f5f5f5;
+}
+
+.gjs-frame {
+  border: none;
+}
+
+/* Component Toolbar */
+.gjs-toolbar {
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 4px;
+}
+
+.gjs-toolbar-item {
+  color: #d4d4d4;
+}
+
+.gjs-toolbar-item:hover {
+  background: #374151;
+}
+
+/* Scrollbars */
+.blocks-container::-webkit-scrollbar,
+.layers-container::-webkit-scrollbar,
+.styles-container::-webkit-scrollbar,
+.traits-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.blocks-container::-webkit-scrollbar-track,
+.layers-container::-webkit-scrollbar-track,
+.styles-container::-webkit-scrollbar-track,
+.traits-container::-webkit-scrollbar-track {
+  background: #171717;
+}
+
+.blocks-container::-webkit-scrollbar-thumb,
+.layers-container::-webkit-scrollbar-thumb,
+.styles-container::-webkit-scrollbar-thumb,
+.traits-container::-webkit-scrollbar-thumb {
+  background: #404040;
+  border-radius: 4px;
+}
+
+.blocks-container::-webkit-scrollbar-thumb:hover,
+.layers-container::-webkit-scrollbar-thumb:hover,
+.styles-container::-webkit-scrollbar-thumb:hover,
+.traits-container::-webkit-scrollbar-thumb:hover {
+  background: #525252;
+}

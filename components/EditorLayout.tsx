@@ -140,14 +140,8 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
           ${activeTab === 'code' ? 'hidden' : 'flex'}
           ${activeTab === 'split' ? 'w-1/2' : 'w-full'}
         `}>
-          <div className="absolute top-0 left-0 right-0 z-10 px-4 py-2 text-xs font-mono text-neutral-500 bg-neutral-200 border-b border-neutral-300 flex justify-between shadow-sm">
-            <span>LIVE CANVAS</span>
-            <span className="text-blue-600 font-medium flex items-center gap-1"><Mail size={12}/> Email Renderer</span>
-          </div>
-          <div className="flex-1 overflow-auto bg-neutral-100 p-8 flex justify-center">
-             <div className="w-full max-w-[800px] h-full bg-white shadow-xl">
-               <LiveCanvas html={codeToRender} onHtmlChange={handleCanvasUpdate} />
-             </div>
+          <div className="flex-1 overflow-hidden bg-neutral-100">
+            <LiveCanvas html={codeToRender} onHtmlChange={handleCanvasUpdate} />
           </div>
         </div>
       </div>
