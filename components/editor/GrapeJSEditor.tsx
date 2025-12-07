@@ -3,7 +3,7 @@ import grapesjs from 'grapesjs';
 import 'grapesjs/dist/css/grapes.min.css';
 import gjsPresetNewsletter from 'grapesjs-preset-newsletter';
 import '../grapesjs-custom.css';
-import { uploadImage } from '../../services/imageUploadService';
+import { uploadImage, replaceBase64ImagesWithUrls } from '../../services/imageUploadService';
 
 interface GrapeJSEditorProps {
   html: string;
@@ -65,31 +65,43 @@ export const GrapeJSEditor = forwardRef<GrapeJSEditorRef, GrapeJSEditorProps>(
             'gjs-preset-newsletter': {
               modalTitleImport: 'Import Template',
               keepInlineStyles: true,
+              useCustomTheme: false,
             },
           },
 
-        // Canvas settings - inject fonts into iframe
-        canvas: {
-          styles: [
-            'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&display=swap',
-            'data:text/css;base64,' + btoa(`
-              * { font-family: 'Space Grotesk', Helvetica, Arial, sans-serif !important; }
-              body { font-family: 'Space Grotesk', Helvetica, Arial, sans-serif !important; }
-            `),
-          ],
-          scripts: [],
-        },
-
-        // CRITICAL: Preserve inline styles for email compatibility
-        avoidInlineStyle: false,
-
-        // Parser options to keep inline styles and attributes
-        parser: {
-          optionsHtml: {
-            allowScripts: false,
-            allowUnsafeAttr: true,
+          // Canvas settings - inject fonts into iframe
+          canvas: {
+            styles: [
+              'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&display=swap',
+              'data:text/css;base64,' + btoa(`
+                * { font-family: 'Space Grotesk', Helvetica, Arial, sans-serif !important; }
+                body { font-family: 'Space Grotesk', Helvetica, Arial, sans-serif !important; }
+              `),
+            ],
+            scripts: [],
           },
-        },
+
+          // CSS Composer - CRITICAL for email export
+          cssComposer: {
+            // Don't add CSS rules, keep everything inline
+            rules: [],
+          },
+
+          // Selector Manager - prevent class generation
+          selectorManager: {
+            componentFirst: true,
+          },
+
+          // CRITICAL: Keep all styles inline for email compatibility
+          avoidInlineStyle: false,
+
+          // Parser options to keep inline styles and attributes
+          parser: {
+            optionsHtml: {
+              allowScripts: false,
+              allowUnsafeAttr: true,
+            },
+          },
 
         // Device manager for responsive preview
         deviceManager: {
@@ -193,7 +205,17 @@ export const GrapeJSEditor = forwardRef<GrapeJSEditorRef, GrapeJSEditorProps>(
               name: 'Typography',
               open: false,
               properties: [
-                'font-family',
+                {
+                  property: 'font-family',
+                  type: 'select',
+                  default: 'Helvetica, Arial, sans-serif',
+                  options: [
+                    { id: 'helvetica', value: 'Helvetica, Arial, sans-serif', name: 'Helvetica' },
+                    { id: 'georgia', value: 'Georgia, serif', name: 'Georgia' },
+                    { id: 'times', value: 'Times New Roman, serif', name: 'Times' },
+                    { id: 'courier', value: 'Courier New, monospace', name: 'Courier' },
+                  ],
+                },
                 'font-size',
                 'font-weight',
                 'letter-spacing',
@@ -249,6 +271,15 @@ export const GrapeJSEditor = forwardRef<GrapeJSEditorRef, GrapeJSEditorProps>(
       editor.on('component:add', async (component: any) => {
         const type = component.get('type');
         
+        // Ensure text elements have font-family
+        const textTypes = ['text', 'textnode', 'link'];
+        if (textTypes.includes(type) || component.get('tagName')?.match(/^(p|h[1-6]|span|a|div)$/i)) {
+          const styles = component.getStyle();
+          if (!styles['font-family']) {
+            component.addStyle({ 'font-family': 'Helvetica, Arial, sans-serif' });
+          }
+        }
+        
         // Check if it's an image component
         if (type === 'image') {
           const src = component.get('src');
@@ -269,8 +300,13 @@ export const GrapeJSEditor = forwardRef<GrapeJSEditorRef, GrapeJSEditorProps>(
               
               // Update the component with the new URL
               component.set('src', url);
+              
+              // Force a re-render to show the uploaded image
+              component.view?.render();
             } catch (error) {
               console.error('❌ Component upload failed:', error);
+              // Show user-friendly error
+              alert('Image upload failed. Please try again or use a smaller image.');
             }
           }
         }
@@ -278,12 +314,13 @@ export const GrapeJSEditor = forwardRef<GrapeJSEditorRef, GrapeJSEditorProps>(
 
         grapesjsInstance.current = editor;
 
-        // Load initial HTML - parse the full document
+        // Load initial HTML - parse the full document and preserve inline styles
         if (html) {
           const parser = new DOMParser();
           const doc = parser.parseFromString(html, 'text/html');
           const bodyContent = doc.body ? doc.body.innerHTML : html;
 
+          // Set components - inline styles are preserved by default config
           editor.setComponents(bodyContent);
 
           // Extract and set any style tags
@@ -308,20 +345,48 @@ export const GrapeJSEditor = forwardRef<GrapeJSEditorRef, GrapeJSEditorProps>(
           }
 
           // Debounce updates to prevent infinite loop
-          updateTimeoutRef.current = setTimeout(() => {
-            const updatedHtml = editor.getHtml();
-            const updatedCss = editor.getCss();
+          updateTimeoutRef.current = setTimeout(async () => {
+            // Get HTML with inline styles using toHTML with proper options
+            const components = editor.getComponents();
+            let updatedHtml = components.map((comp: any) => comp.toHTML()).join('');
+            
+            // Fallback to getHtml if toHTML doesn't work
+            if (!updatedHtml) {
+              updatedHtml = editor.getHtml();
+            }
 
-            // Reconstruct full HTML document for email
+            // Check for any remaining base64 images and upload them
+            if (updatedHtml.includes('data:image')) {
+              console.warn('⚠️ Found base64 images in HTML, attempting to upload...');
+              try {
+                updatedHtml = await replaceBase64ImagesWithUrls(updatedHtml);
+                console.log('✅ All base64 images replaced with URLs');
+              } catch (error) {
+                console.error('❌ Failed to replace some base64 images:', error);
+              }
+            }
+
+            // Clean up the HTML - remove GrapeJS artifacts but preserve font-family
+            updatedHtml = updatedHtml
+              .replace(/\s*class="[^"]*"/g, '') // Remove all class attributes
+              .replace(/\s*box-sizing:\s*border-box;\s*/g, '') // Remove box-sizing
+              .replace(/\s*style="\s*"/g, ''); // Remove empty style attributes
+
+            // Reconstruct full HTML document for email with proper font support
             const fullHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-    ${updatedCss ? `<style>${updatedCss}</style>` : ''}
+    <title>Email Template</title>
+    <!--[if mso]>
+    <style type="text/css">
+        body, table, td {font-family: Helvetica, Arial, sans-serif !important;}
+    </style>
+    <![endif]-->
 </head>
-<body>
+<body style="margin: 0; padding: 0; background-color: #f6f6f8; font-family: Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;">
 ${updatedHtml}
 </body>
 </html>`;
