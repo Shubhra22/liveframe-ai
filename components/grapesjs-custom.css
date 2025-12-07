@@ -217,11 +217,35 @@
 
 /* Canvas Frame */
 .gjs-cv-canvas {
-  background: #f5f5f5;
+  background: #0a0a0a;
 }
 
 .gjs-frame {
   border: none;
+}
+
+/* Hide the default GrapeJS canvas toolbar (icons on top right of canvas) */
+.gjs-cv-canvas__tools {
+  display: none !important;
+}
+
+/* GrapeJS color overrides for dark theme */
+.gjs-one-bg {
+  background-color: #171717 !important;
+}
+
+.gjs-two-color {
+  color: #a3a3a3 !important;
+}
+
+.gjs-three-bg {
+  background-color: #262626 !important;
+  color: #d4d4d4 !important;
+}
+
+.gjs-four-color,
+.gjs-four-color-h:hover {
+  color: #3b82f6 !important;
 }
 
 /* Component Toolbar - appears when selecting elements */
