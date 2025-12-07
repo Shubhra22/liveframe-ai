@@ -59,18 +59,24 @@ export const GrapeJSEditor = forwardRef<GrapeJSEditorRef, GrapeJSEditorProps>(
           fromElement: false,
           storageManager: false,
 
-        // Use newsletter preset for email-friendly components
-        plugins: [gjsPresetNewsletter],
-        pluginsOpts: {
-          'gjs-preset-newsletter': {
-            modalTitleImport: 'Import Template',
-            keepInlineStyles: true,
+          // Use newsletter preset for email-friendly components
+          plugins: [gjsPresetNewsletter],
+          pluginsOpts: {
+            'gjs-preset-newsletter': {
+              modalTitleImport: 'Import Template',
+              keepInlineStyles: true,
+            },
           },
-        },
 
-        // Canvas settings
+        // Canvas settings - inject fonts into iframe
         canvas: {
-          styles: [],
+          styles: [
+            'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&display=swap',
+            'data:text/css;base64,' + btoa(`
+              * { font-family: 'Space Grotesk', Helvetica, Arial, sans-serif !important; }
+              body { font-family: 'Space Grotesk', Helvetica, Arial, sans-serif !important; }
+            `),
+          ],
           scripts: [],
         },
 
@@ -102,10 +108,62 @@ export const GrapeJSEditor = forwardRef<GrapeJSEditorRef, GrapeJSEditorProps>(
           ],
         },
 
-        // Panels configuration - we'll use custom React buttons instead
-        panels: {
-          defaults: [],
-        },
+          // Panels configuration - show useful top toolbar
+          panels: {
+            defaults: [
+              {
+                id: 'options',
+                el: '.gjs-pn-options',
+                buttons: [
+                  {
+                    id: 'sw-visibility',
+                    command: 'sw-visibility',
+                    context: 'sw-visibility',
+                    className: 'fa fa-square-o',
+                    attributes: { title: 'View components' },
+                  },
+                  {
+                    id: 'preview',
+                    command: 'preview',
+                    context: 'preview',
+                    className: 'fa fa-eye',
+                    attributes: { title: 'Preview' },
+                  },
+                  {
+                    id: 'fullscreen',
+                    command: 'fullscreen',
+                    context: 'fullscreen',
+                    className: 'fa fa-arrows-alt',
+                    attributes: { title: 'Fullscreen' },
+                  },
+                  {
+                    id: 'export-template',
+                    command: 'export-template',
+                    className: 'fa fa-code',
+                    attributes: { title: 'View code' },
+                  },
+                  {
+                    id: 'undo',
+                    command: 'undo',
+                    className: 'fa fa-undo',
+                    attributes: { title: 'Undo' },
+                  },
+                  {
+                    id: 'redo',
+                    command: 'redo',
+                    className: 'fa fa-repeat',
+                    attributes: { title: 'Redo' },
+                  },
+                  {
+                    id: 'clear-all',
+                    command: 'canvas-clear',
+                    className: 'fa fa-trash',
+                    attributes: { title: 'Clear canvas' },
+                  },
+                ],
+              },
+            ],
+          },
 
         // Block manager
         blockManager: {
