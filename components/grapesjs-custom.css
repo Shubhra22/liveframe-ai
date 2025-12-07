@@ -105,30 +105,10 @@
   font-size: 11px;
 }
 
-/* Toolbar Buttons */
-.panel__basic-actions button,
-.panel__devices button {
-  background: #262626;
-  border: 1px solid #404040;
-  color: #d4d4d4;
-  padding: 6px 10px;
-  margin: 0 4px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.panel__basic-actions button:hover,
-.panel__devices button:hover {
-  background: #404040;
-  border-color: #525252;
-}
-
-.panel__basic-actions button.gjs-pn-active,
-.panel__devices button.gjs-pn-active {
-  background: #3b82f6;
-  border-color: #3b82f6;
-  color: white;
+/* Hide default GrapeJS panels since we're using custom React buttons */
+.panel__basic-actions,
+.panel__devices {
+  display: none;
 }
 
 /* Canvas Frame */
@@ -140,19 +120,38 @@
   border: none;
 }
 
-/* Component Toolbar */
+/* Component Toolbar - appears when selecting elements */
 .gjs-toolbar {
-  background: #1f2937;
-  border: 1px solid #374151;
-  border-radius: 4px;
+  background: #1f2937 !important;
+  border: 1px solid #374151 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
+  padding: 2px !important;
 }
 
 .gjs-toolbar-item {
-  color: #d4d4d4;
+  color: #d4d4d4 !important;
+  padding: 6px 8px !important;
+  border-radius: 4px !important;
+  transition: all 0.2s !important;
+  font-size: 12px !important;
 }
 
 .gjs-toolbar-item:hover {
-  background: #374151;
+  background: #374151 !important;
+  color: #ffffff !important;
+}
+
+/* Selected component outline */
+.gjs-selected {
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: -2px !important;
+}
+
+/* Hover outline */
+.gjs-hovered {
+  outline: 2px dashed #60a5fa !important;
+  outline-offset: -2px !important;
 }
 
 /* Scrollbars */

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LiveCanvas } from './LiveCanvas';
-import { ArrowLeftRight, Code, Eye, MonitorPlay, Loader2, Mail, Sparkles } from 'lucide-react';
+import { ArrowLeftRight, Code, Eye, MonitorPlay, Loader2, Mail, Sparkles, Grid3x3, X } from 'lucide-react';
 import { convertHtmlToEmail } from '../services/geminiService';
 import { toast } from './ui/Toaster';
 
@@ -15,6 +15,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
   const [codeToRender, setCodeToRender] = useState(initialCode);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
+  const [showBlocks, setShowBlocks] = useState(false);
 
   // Auto-sync code to preview with debounce
   useEffect(() => {
@@ -115,23 +116,54 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
 
       {/* Workspace */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Code Editor */}
+        {/* Code Editor Section */}
         <div className={`
-          flex-col border-r border-neutral-800 bg-[#1e1e1e]
+          flex border-r border-neutral-800 bg-[#1e1e1e]
           ${activeTab === 'preview' ? 'hidden' : 'flex'}
           ${activeTab === 'split' ? 'w-1/2' : 'w-full'}
         `}>
-          <div className="px-4 py-2 text-xs font-mono text-neutral-500 border-b border-neutral-800 flex justify-between bg-[#252525]">
-            <span>SOURCE CODE</span>
-            <span className="text-neutral-600">Editable</span>
+          {/* Blocks Panel */}
+          {showBlocks && (
+            <div className="w-64 bg-neutral-900 border-r border-neutral-800 overflow-y-auto">
+              <div className="p-3 border-b border-neutral-800 flex items-center justify-between">
+                <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">Blocks</h3>
+                <button 
+                  onClick={() => setShowBlocks(false)}
+                  className="text-neutral-500 hover:text-neutral-300 transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="blocks-container p-2"></div>
+            </div>
+          )}
+
+          {/* Code Editor */}
+          <div className="flex-1 flex flex-col">
+            <div className="px-4 py-2 text-xs font-mono text-neutral-500 border-b border-neutral-800 flex justify-between bg-[#252525]">
+              <div className="flex items-center gap-2">
+                <span>SOURCE CODE</span>
+                {!showBlocks && (
+                  <button 
+                    onClick={() => setShowBlocks(true)}
+                    className="flex items-center gap-1 px-2 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-neutral-300 text-xs rounded transition-colors"
+                    title="Show Blocks"
+                  >
+                    <Grid3x3 size={12} />
+                    Blocks
+                  </button>
+                )}
+              </div>
+              <span className="text-neutral-600">Editable</span>
+            </div>
+            <textarea
+              className="flex-1 w-full bg-[#1e1e1e] text-neutral-300 font-mono text-sm p-4 resize-none focus:outline-none leading-relaxed"
+              value={localCode}
+              onChange={(e) => setLocalCode(e.target.value)}
+              spellCheck={false}
+              placeholder="Paste your HTML here..."
+            />
           </div>
-          <textarea
-            className="flex-1 w-full bg-[#1e1e1e] text-neutral-300 font-mono text-sm p-4 resize-none focus:outline-none leading-relaxed"
-            value={localCode}
-            onChange={(e) => setLocalCode(e.target.value)}
-            spellCheck={false}
-            placeholder="Paste your HTML here..."
-          />
         </div>
 
         {/* Live Preview */}
