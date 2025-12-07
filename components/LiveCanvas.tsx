@@ -12,6 +12,8 @@ interface LiveCanvasProps {
 export const LiveCanvas: React.FC<LiveCanvasProps> = ({ html, onHtmlChange }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const grapesjsInstance = useRef<any>(null);
+  const [showBlocks, setShowBlocks] = React.useState(false);
+  const [showLayers, setShowLayers] = React.useState(false);
 
   // Initialize GrapeJS
   useEffect(() => {
@@ -41,9 +43,6 @@ export const LiveCanvas: React.FC<LiveCanvasProps> = ({ html, onHtmlChange }) =>
 
       // CRITICAL: Preserve inline styles for email compatibility
       avoidInlineStyle: false,
-      
-      // Keep default wrapper off to preserve email structure
-      wrapperIsBody: true,
       
       // Parser options to keep inline styles and attributes
       parser: {
@@ -246,49 +245,103 @@ ${updatedHtml}
 
   return (
     <div className="relative w-full h-full flex">
-      {/* Left Sidebar - Blocks */}
-      <div className="w-64 bg-neutral-900 border-r border-neutral-800 overflow-y-auto">
-        <div className="p-3 border-b border-neutral-800">
-          <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">Blocks</h3>
+      {/* Collapsible Left Sidebar - Blocks */}
+      {showBlocks && (
+        <div className="w-64 bg-neutral-900 border-r border-neutral-800 overflow-y-auto animate-in slide-in-from-left duration-200">
+          <div className="p-3 border-b border-neutral-800 flex items-center justify-between">
+            <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">Blocks</h3>
+            <button 
+              onClick={() => setShowBlocks(false)}
+              className="text-neutral-500 hover:text-neutral-300 transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          <div className="blocks-container p-2"></div>
         </div>
-        <div className="blocks-container p-2"></div>
-      </div>
+      )}
 
       {/* Main Editor Canvas */}
       <div className="flex-1 flex flex-col">
-        {/* Top Toolbar */}
+        {/* Minimal Top Toolbar */}
         <div className="h-12 bg-neutral-900 border-b border-neutral-800 flex items-center justify-between px-4">
-          <div className="panel__devices flex gap-2"></div>
-          <div className="panel__basic-actions"></div>
+          <div className="flex items-center gap-2">
+            {!showBlocks && (
+              <button 
+                onClick={() => setShowBlocks(true)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-medium rounded transition-colors"
+                title="Show Blocks"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="7" height="7"/>
+                  <rect x="14" y="3" width="7" height="7"/>
+                  <rect x="14" y="14" width="7" height="7"/>
+                  <rect x="3" y="14" width="7" height="7"/>
+                </svg>
+                Blocks
+              </button>
+            )}
+            {!showLayers && (
+              <button 
+                onClick={() => setShowLayers(true)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-medium rounded transition-colors"
+                title="Show Layers"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                  <path d="M2 17l10 5 10-5"/>
+                  <path d="M2 12l10 5 10-5"/>
+                </svg>
+                Layers
+              </button>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <div className="panel__devices flex gap-2"></div>
+            <div className="panel__basic-actions"></div>
+          </div>
         </div>
 
         {/* Canvas */}
         <div ref={editorRef} className="flex-1 bg-neutral-100"></div>
       </div>
 
-      {/* Right Sidebar - Layers & Styles */}
-      <div className="w-64 bg-neutral-900 border-l border-neutral-800 overflow-y-auto">
-        <div className="border-b border-neutral-800">
-          <div className="p-3">
-            <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">Layers</h3>
+      {/* Collapsible Right Sidebar - Layers & Styles */}
+      {showLayers && (
+        <div className="w-64 bg-neutral-900 border-l border-neutral-800 overflow-y-auto animate-in slide-in-from-right duration-200">
+          <div className="border-b border-neutral-800">
+            <div className="p-3 flex items-center justify-between">
+              <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">Layers</h3>
+              <button 
+                onClick={() => setShowLayers(false)}
+                className="text-neutral-500 hover:text-neutral-300 transition-colors"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <div className="layers-container px-2 pb-3"></div>
           </div>
-          <div className="layers-container px-2 pb-3"></div>
-        </div>
-        
-        <div className="border-b border-neutral-800">
-          <div className="p-3">
-            <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">Styles</h3>
+          
+          <div className="border-b border-neutral-800">
+            <div className="p-3">
+              <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">Styles</h3>
+            </div>
+            <div className="styles-container px-2 pb-3"></div>
           </div>
-          <div className="styles-container px-2 pb-3"></div>
-        </div>
 
-        <div>
-          <div className="p-3">
-            <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">Settings</h3>
+          <div>
+            <div className="p-3">
+              <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">Settings</h3>
+            </div>
+            <div className="traits-container px-2 pb-3"></div>
           </div>
-          <div className="traits-container px-2 pb-3"></div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
