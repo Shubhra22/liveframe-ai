@@ -17,6 +17,7 @@ export const LiveCanvas: React.FC<LiveCanvasProps> = ({ html, onHtmlChange }) =>
   });
   const [isEditing, setIsEditing] = useState(false);
   const [iframeLoaded, setIframeLoaded] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Initial Content Injection
   useEffect(() => {
@@ -204,14 +205,67 @@ export const LiveCanvas: React.FC<LiveCanvasProps> = ({ html, onHtmlChange }) =>
 
   const startEditing = () => {
     if (selection.element) {
+      // If it's an image, trigger file picker instead
+      if (selection.type === 'image') {
+        fileInputRef.current?.click();
+        return;
+      }
+      
       setIsEditing(true);
       selection.element.contentEditable = "true";
       selection.element.focus();
     }
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selection.element) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (selection.element && selection.element.tagName.toLowerCase() === 'img') {
+        (selection.element as HTMLImageElement).src = dataUrl;
+        handleUpdate();
+      }
+    };
+    reader.readAsDataURL(file);
+    
+    // Reset input so same file can be selected again
+    e.target.value = '';
+  };
+
   const finishEditing = () => {
     if (selection.element) {
+      // Preserve computed styles before disabling contentEditable
+      const iframe = iframeRef.current;
+      if (iframe && iframe.contentWindow) {
+        const computedStyle = iframe.contentWindow.getComputedStyle(selection.element);
+        
+        // Preserve font-related styles if they're not already inline
+        const fontProps = [
+          'font-family',
+          'font-size',
+          'font-weight',
+          'font-style',
+          'color',
+          'line-height',
+          'letter-spacing',
+          'text-align',
+          'text-decoration'
+        ];
+        
+        fontProps.forEach(prop => {
+          const currentInline = selection.element!.style.getPropertyValue(prop);
+          if (!currentInline) {
+            const computedValue = computedStyle.getPropertyValue(prop);
+            if (computedValue && computedValue !== 'normal' && computedValue !== 'none') {
+              selection.element!.style.setProperty(prop, computedValue);
+            }
+          }
+        });
+      }
+      
       selection.element.contentEditable = "false";
       handleUpdate();
       setIsEditing(false);
@@ -235,6 +289,13 @@ export const LiveCanvas: React.FC<LiveCanvasProps> = ({ html, onHtmlChange }) =>
 
   return (
     <div className="relative w-full h-full">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleImageUpload}
+        className="hidden"
+      />
       <iframe 
         ref={iframeRef}
         className="w-full h-full border-none bg-white"

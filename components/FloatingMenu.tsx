@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { SelectionState, AiActionType } from '../types';
-import { Wand2, Type, Image as ImageIcon, Trash2, X, RefreshCw, Check, Edit3, MoveHorizontal, AlignLeft, Bold } from 'lucide-react';
+import { Wand2, Type, Image as ImageIcon, Trash2, X, RefreshCw, Check, Edit3, MoveHorizontal, AlignLeft, Bold, Link as LinkIcon } from 'lucide-react';
 import { generateText, generateImage } from '../services/geminiService';
 import { toast } from './ui/Toaster';
 
@@ -15,7 +15,7 @@ export const FloatingMenu: React.FC<FloatingMenuProps> = ({ selection, onClose, 
   const [isProcessing, setIsProcessing] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [showInput, setShowInput] = useState(false);
-  const [inputType, setInputType] = useState<'text' | 'image' | null>(null);
+  const [inputType, setInputType] = useState<'text' | 'image' | 'link' | null>(null);
 
   const { element, type, rect } = selection;
 
@@ -69,8 +69,48 @@ export const FloatingMenu: React.FC<FloatingMenuProps> = ({ selection, onClose, 
     if (!inputValue.trim()) return;
     if (inputType === 'image') {
       handleAiImageGen(inputValue);
+    } else if (inputType === 'link') {
+      handleAddLink(inputValue);
     }
+    setInputValue('');
     setShowInput(false);
+  };
+
+  const handleAddLink = (url: string) => {
+    if (!element) return;
+    
+    updateElement(() => {
+      // If element is already a link, just update href
+      if (element.tagName === 'A') {
+        element.setAttribute('href', url);
+      } else {
+        // Wrap element in a link
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        
+        // Clone the element and append to link
+        const clone = element.cloneNode(true) as HTMLElement;
+        link.appendChild(clone);
+        
+        // Replace original element with link
+        element.parentNode?.replaceChild(link, element);
+      }
+    });
+    toast.success("Link added!");
+  };
+
+  const getCurrentLink = (): string => {
+    if (!element) return '';
+    if (element.tagName === 'A') {
+      return element.getAttribute('href') || '';
+    }
+    // Check if parent is a link
+    if (element.parentElement?.tagName === 'A') {
+      return element.parentElement.getAttribute('href') || '';
+    }
+    return '';
   };
 
   const handleDelete = () => {
@@ -89,7 +129,11 @@ export const FloatingMenu: React.FC<FloatingMenuProps> = ({ selection, onClose, 
             type="text" 
             autoFocus
             className="bg-neutral-800 border border-neutral-600 rounded px-2 py-1 text-sm w-48 outline-none focus:border-blue-500 text-white"
-            placeholder={inputType === 'image' ? "Describe image..." : "Instruction..."}
+            placeholder={
+              inputType === 'image' ? "Describe image..." : 
+              inputType === 'link' ? "Enter URL (https://...)" : 
+              "Instruction..."
+            }
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSubmitInput()}
@@ -102,7 +146,10 @@ export const FloatingMenu: React.FC<FloatingMenuProps> = ({ selection, onClose, 
             {isProcessing ? <RefreshCw className="animate-spin" size={16}/> : <Check size={16}/>}
           </button>
           <button 
-            onClick={() => setShowInput(false)}
+            onClick={() => {
+              setShowInput(false);
+              setInputValue('');
+            }}
             className="p-1 hover:bg-neutral-700 rounded text-neutral-400 transition-colors"
           >
             <X size={16}/>
@@ -121,6 +168,7 @@ export const FloatingMenu: React.FC<FloatingMenuProps> = ({ selection, onClose, 
     }
 
     if (type === 'image') {
+      const currentLink = getCurrentLink();
       return (
         <div className="flex items-center gap-1 p-1">
           <button 
@@ -132,6 +180,18 @@ export const FloatingMenu: React.FC<FloatingMenuProps> = ({ selection, onClose, 
             title="Edit URL"
           >
             <Edit3 size={14} /> URL
+          </button>
+          <div className="w-px h-4 bg-neutral-700 mx-1" />
+          <button 
+             onClick={() => { 
+               setInputType('link'); 
+               setInputValue(currentLink);
+               setShowInput(true); 
+             }}
+             className={`flex items-center gap-1.5 px-2 py-1.5 hover:bg-blue-900/50 rounded transition-colors text-xs font-medium ${currentLink ? 'text-blue-400' : 'text-neutral-300'}`}
+             title="Add/Edit Link"
+          >
+            <LinkIcon size={14} /> Link
           </button>
           <div className="w-px h-4 bg-neutral-700 mx-1" />
           <button 
@@ -150,6 +210,7 @@ export const FloatingMenu: React.FC<FloatingMenuProps> = ({ selection, onClose, 
     }
 
     // Text & Container Menu
+    const currentLink = getCurrentLink();
     return (
       <div className="flex items-center gap-1 p-1">
         <button 
@@ -158,6 +219,20 @@ export const FloatingMenu: React.FC<FloatingMenuProps> = ({ selection, onClose, 
           title="Edit Text"
         >
           <Type size={14} /> Edit
+        </button>
+        
+        <div className="w-px h-4 bg-neutral-700 mx-1" />
+
+        <button 
+          onClick={() => { 
+            setInputType('link'); 
+            setInputValue(currentLink);
+            setShowInput(true); 
+          }}
+          className={`flex items-center gap-1.5 px-2 py-1.5 hover:bg-blue-900/50 rounded transition-colors text-xs font-medium ${currentLink ? 'text-blue-400' : 'text-neutral-300'}`}
+          title="Add/Edit Link"
+        >
+          <LinkIcon size={14} /> Link
         </button>
         
         <div className="w-px h-4 bg-neutral-700 mx-1" />
