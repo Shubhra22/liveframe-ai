@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { GrapeJSEditor, GrapeJSEditorRef } from './editor/GrapeJSEditor';
 import { EditorToolbar } from './editor/EditorToolbar';
 import { LayersPanel } from './editor/LayersPanel';
@@ -8,11 +8,20 @@ interface LiveCanvasProps {
   onHtmlChange: (newHtml: string) => void;
 }
 
-export const LiveCanvas: React.FC<LiveCanvasProps> = ({ html, onHtmlChange }) => {
+export interface LiveCanvasRef {
+  getEditor: () => any;
+}
+
+export const LiveCanvas = forwardRef<LiveCanvasRef, LiveCanvasProps>(({ html, onHtmlChange }, ref) => {
   const editorRef = useRef<GrapeJSEditorRef>(null);
   const [showLayers, setShowLayers] = useState(false);
   const [showBorders, setShowBorders] = useState(true);
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'mobile'>('desktop');
+
+  // Expose editor instance to parent
+  useImperativeHandle(ref, () => ({
+    getEditor: () => editorRef.current?.getEditor(),
+  }));
 
   // Handle device toggle
   const handleDeviceToggle = (device: 'desktop' | 'mobile') => {
@@ -44,7 +53,12 @@ export const LiveCanvas: React.FC<LiveCanvasProps> = ({ html, onHtmlChange }) =>
       <div className="flex-1 flex overflow-hidden">
         {/* Main Editor Canvas */}
         <div className="flex-1">
-          <GrapeJSEditor ref={editorRef} html={html} onHtmlChange={onHtmlChange} />
+          <GrapeJSEditor 
+            ref={editorRef} 
+            html={html} 
+            onHtmlChange={onHtmlChange}
+            blocksContainerId="#editor-blocks-container"
+          />
         </div>
 
         {/* Right Sidebar - Layers & Styles */}
@@ -52,4 +66,6 @@ export const LiveCanvas: React.FC<LiveCanvasProps> = ({ html, onHtmlChange }) =>
       </div>
     </div>
   );
-};
+});
+
+LiveCanvas.displayName = 'LiveCanvas';

@@ -16,6 +16,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
   const [isSyncing, setIsSyncing] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [showBlocks, setShowBlocks] = useState(false);
+  const liveCanvasRef = React.useRef<any>(null);
 
   // Auto-sync code to preview with debounce
   useEffect(() => {
@@ -134,7 +135,9 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
                   <X size={16} />
                 </button>
               </div>
-              <div className="blocks-container p-2"></div>
+              <div id="editor-blocks-container" className="p-2">
+                {/* Blocks will be populated by GrapeJS */}
+              </div>
             </div>
           )}
 
@@ -173,7 +176,11 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
           ${activeTab === 'split' ? 'w-1/2' : 'w-full'}
         `}>
           <div className="flex-1 overflow-hidden bg-neutral-100">
-            <LiveCanvas html={codeToRender} onHtmlChange={handleCanvasUpdate} />
+            <LiveCanvas 
+              ref={liveCanvasRef}
+              html={codeToRender} 
+              onHtmlChange={handleCanvasUpdate} 
+            />
           </div>
         </div>
       </div>

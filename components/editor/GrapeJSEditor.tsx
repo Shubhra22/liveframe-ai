@@ -3,10 +3,12 @@ import grapesjs from 'grapesjs';
 import 'grapesjs/dist/css/grapes.min.css';
 import gjsPresetNewsletter from 'grapesjs-preset-newsletter';
 import '../grapesjs-custom.css';
+import { uploadImage } from '../../services/imageUploadService';
 
 interface GrapeJSEditorProps {
   html: string;
   onHtmlChange: (newHtml: string) => void;
+  blocksContainerId?: string;
 }
 
 export interface GrapeJSEditorRef {
@@ -16,7 +18,7 @@ export interface GrapeJSEditorRef {
 }
 
 export const GrapeJSEditor = forwardRef<GrapeJSEditorRef, GrapeJSEditorProps>(
-  ({ html, onHtmlChange }, ref) => {
+  ({ html, onHtmlChange, blocksContainerId = '.blocks-container' }, ref) => {
     const editorRef = useRef<HTMLDivElement>(null);
     const grapesjsInstance = useRef<any>(null);
     const updateTimeoutRef = useRef<any>(null);
@@ -41,12 +43,21 @@ export const GrapeJSEditor = forwardRef<GrapeJSEditorRef, GrapeJSEditorProps>(
     useEffect(() => {
       if (!editorRef.current || grapesjsInstance.current) return;
 
-      const editor = grapesjs.init({
-        container: editorRef.current,
-        height: '100%',
-        width: '100%',
-        fromElement: false,
-        storageManager: false,
+      // Wait for blocks container to be available in DOM
+      const initEditor = () => {
+        const blocksContainer = document.querySelector(blocksContainerId);
+        if (!blocksContainer && blocksContainerId !== '.blocks-container') {
+          // If custom container doesn't exist yet, wait a bit
+          setTimeout(initEditor, 100);
+          return;
+        }
+
+        const editor = grapesjs.init({
+          container: editorRef.current!,
+          height: '100%',
+          width: '100%',
+          fromElement: false,
+          storageManager: false,
 
         // Use newsletter preset for email-friendly components
         plugins: [gjsPresetNewsletter],
@@ -98,7 +109,7 @@ export const GrapeJSEditor = forwardRef<GrapeJSEditorRef, GrapeJSEditorProps>(
 
         // Block manager
         blockManager: {
-          appendTo: '.blocks-container',
+          appendTo: blocksContainerId,
         },
 
         // Layer manager
@@ -146,46 +157,105 @@ export const GrapeJSEditor = forwardRef<GrapeJSEditorRef, GrapeJSEditorProps>(
         traitManager: {
           appendTo: '.traits-container',
         },
+
       });
 
-      grapesjsInstance.current = editor;
-
-      // Load initial HTML - parse the full document
-      if (html) {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const bodyContent = doc.body ? doc.body.innerHTML : html;
-
-        editor.setComponents(bodyContent);
-
-        // Extract and set any style tags
-        const styleTags = doc.querySelectorAll('style');
-        let cssContent = '';
-        styleTags.forEach((style) => {
-          cssContent += style.textContent || '';
-        });
-        if (cssContent) {
-          editor.setStyle(cssContent);
+      // Intercept image additions and upload them
+      editor.on('asset:add', async (asset: any) => {
+        console.log('🎯 Asset added:', asset.get('type'), asset.get('src')?.substring(0, 50));
+        
+        // Check if the asset is a base64 image
+        const src = asset.get('src');
+        if (src && src.startsWith('data:image')) {
+          try {
+            console.log('🔄 Converting base64 to hosted image...');
+            
+            // Convert base64 to file
+            const response = await fetch(src);
+            const blob = await response.blob();
+            const file = new File([blob], `image-${Date.now()}.png`, { type: blob.type });
+            
+            // Upload the file
+            const url = await uploadImage(file);
+            console.log('✅ Image uploaded:', url);
+            
+            // Update the asset with the new URL
+            asset.set('src', url);
+          } catch (error) {
+            console.error('❌ Upload failed, keeping base64:', error);
+          }
         }
-      }
+      });
 
-      // Listen for changes and update parent with debounce
-      const handleUpdate = () => {
-        // Prevent update loop
-        if (isUpdatingRef.current) return;
+      // Also intercept when components with images are added
+      editor.on('component:add', async (component: any) => {
+        const type = component.get('type');
+        
+        // Check if it's an image component
+        if (type === 'image') {
+          const src = component.get('src');
+          console.log('🖼️ Image component added:', src?.substring(0, 50));
+          
+          if (src && src.startsWith('data:image')) {
+            try {
+              console.log('🔄 Uploading image from component...');
+              
+              // Convert base64 to file
+              const response = await fetch(src);
+              const blob = await response.blob();
+              const file = new File([blob], `image-${Date.now()}.png`, { type: blob.type });
+              
+              // Upload the file
+              const url = await uploadImage(file);
+              console.log('✅ Component image uploaded:', url);
+              
+              // Update the component with the new URL
+              component.set('src', url);
+            } catch (error) {
+              console.error('❌ Component upload failed:', error);
+            }
+          }
+        }
+      });
 
-        // Clear existing timeout
-        if (updateTimeoutRef.current) {
-          clearTimeout(updateTimeoutRef.current);
+        grapesjsInstance.current = editor;
+
+        // Load initial HTML - parse the full document
+        if (html) {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const bodyContent = doc.body ? doc.body.innerHTML : html;
+
+          editor.setComponents(bodyContent);
+
+          // Extract and set any style tags
+          const styleTags = doc.querySelectorAll('style');
+          let cssContent = '';
+          styleTags.forEach((style) => {
+            cssContent += style.textContent || '';
+          });
+          if (cssContent) {
+            editor.setStyle(cssContent);
+          }
         }
 
-        // Debounce updates to prevent infinite loop
-        updateTimeoutRef.current = setTimeout(() => {
-          const updatedHtml = editor.getHtml();
-          const updatedCss = editor.getCss();
+        // Listen for changes and update parent with debounce
+        const handleUpdate = () => {
+          // Prevent update loop
+          if (isUpdatingRef.current) return;
 
-          // Reconstruct full HTML document for email
-          const fullHtml = `<!DOCTYPE html>
+          // Clear existing timeout
+          if (updateTimeoutRef.current) {
+            clearTimeout(updateTimeoutRef.current);
+          }
+
+          // Debounce updates to prevent infinite loop
+          updateTimeoutRef.current = setTimeout(() => {
+            const updatedHtml = editor.getHtml();
+            const updatedCss = editor.getCss();
+
+            // Reconstruct full HTML document for email
+            const fullHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8"/>
@@ -198,18 +268,22 @@ ${updatedHtml}
 </body>
 </html>`;
 
-          isUpdatingRef.current = true;
-          onHtmlChange(fullHtml);
-          setTimeout(() => {
-            isUpdatingRef.current = false;
-          }, 100);
-        }, 500); // 500ms debounce
+            isUpdatingRef.current = true;
+            onHtmlChange(fullHtml);
+            setTimeout(() => {
+              isUpdatingRef.current = false;
+            }, 100);
+          }, 500); // 500ms debounce
+        };
+
+        // Listen to component changes (not every keystroke)
+        editor.on('component:add', handleUpdate);
+        editor.on('component:remove', handleUpdate);
+        editor.on('component:update', handleUpdate);
       };
 
-      // Listen to component changes (not every keystroke)
-      editor.on('component:add', handleUpdate);
-      editor.on('component:remove', handleUpdate);
-      editor.on('component:update', handleUpdate);
+      // Start initialization
+      initEditor();
 
       return () => {
         // Cleanup timeout
@@ -223,7 +297,7 @@ ${updatedHtml}
           grapesjsInstance.current = null;
         }
       };
-    }, []);
+    }, [blocksContainerId]);
 
     // Update GrapeJS content when HTML prop changes (from code editor)
     useEffect(() => {
