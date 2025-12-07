@@ -61,8 +61,10 @@ export const LiveCanvas = forwardRef<LiveCanvasRef, LiveCanvasProps>(({ html, on
           />
         </div>
 
-        {/* Right Sidebar - Layers & Styles */}
-        {showLayers && <LayersPanel onClose={() => setShowLayers(false)} />}
+        {/* Right Sidebar - Layers & Styles - Always render but conditionally show */}
+        <div className={showLayers ? '' : 'hidden'}>
+          <LayersPanel onClose={() => setShowLayers(false)} />
+        </div>
       </div>
     </div>
   );
