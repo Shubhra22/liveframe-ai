@@ -15,7 +15,50 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
   const [codeToRender, setCodeToRender] = useState(initialCode);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
+  const [splitPosition, setSplitPosition] = useState(35); // percentage
+  const [isDragging, setIsDragging] = useState(false);
   const liveCanvasRef = React.useRef<any>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const isDraggingRef = React.useRef(false);
+
+  // Handle resizer drag
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isDraggingRef.current = true;
+    setIsDragging(true);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingRef.current || !containerRef.current) return;
+      
+      e.preventDefault();
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const newPosition = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+      // Clamp between 20% and 80%
+      const clampedPosition = Math.min(Math.max(newPosition, 20), 80);
+      setSplitPosition(clampedPosition);
+    };
+
+    const handleMouseUp = () => {
+      if (isDraggingRef.current) {
+        isDraggingRef.current = false;
+        setIsDragging(false);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
 
   // Auto-sync code to preview with debounce
   useEffect(() => {
@@ -115,13 +158,16 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
       </div>
 
       {/* Workspace */}
-      <div className="flex-1 flex overflow-hidden">
+      <div ref={containerRef} className="flex-1 flex overflow-hidden relative">
         {/* Code Editor Section */}
-        <div className={`
-          flex border-r border-neutral-800 bg-[#1e1e1e]
-          ${activeTab === 'preview' ? 'hidden' : 'flex'}
-          ${activeTab === 'split' ? 'w-1/2' : 'w-full'}
-        `}>
+        <div 
+          className={`
+            flex bg-[#1e1e1e]
+            ${activeTab === 'preview' ? 'hidden' : 'flex'}
+            ${activeTab === 'split' ? '' : 'w-full'}
+          `}
+          style={activeTab === 'split' ? { width: `${splitPosition}%`, flexShrink: 0 } : undefined}
+        >
           {/* Blocks Panel - Always Visible */}
           <div className="w-64 bg-neutral-900 border-r border-neutral-800 overflow-y-auto flex flex-col">
             <div className="p-3 border-b border-neutral-800">
@@ -149,12 +195,27 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
           </div>
         </div>
 
+        {/* Resizer */}
+        {activeTab === 'split' && (
+          <div
+            onMouseDown={handleMouseDown}
+            className={`
+              w-1 bg-neutral-800 hover:bg-blue-500 cursor-col-resize relative flex-shrink-0
+              ${isDragging ? 'bg-blue-500' : ''}
+            `}
+            style={{ transition: isDragging ? 'none' : 'background-color 0.2s' }}
+          >
+            <div className="absolute inset-y-0 -left-2 -right-2" />
+          </div>
+        )}
+
         {/* Live Preview */}
-        <div className={`
-          flex-col bg-neutral-100 relative
-          ${activeTab === 'code' ? 'hidden' : 'flex'}
-          ${activeTab === 'split' ? 'w-1/2' : 'w-full'}
-        `}>
+        <div 
+          className={`
+            flex-col bg-neutral-100 relative flex-1
+            ${activeTab === 'code' ? 'hidden' : 'flex'}
+          `}
+        >
           <div className="flex-1 overflow-hidden bg-neutral-100">
             <LiveCanvas 
               ref={liveCanvasRef}
