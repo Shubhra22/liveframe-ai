@@ -1,0 +1,5 @@
+{
+  "name": "LiveFrame AI",
+  "description": "A powerful WYSIWYG HTML editor that lets you paste raw HTML and edit text, images, and styles in real-time, enhanced with Gemini AI for content rewriting and image generation.",
+  "requestFramePermissions": []
+}
