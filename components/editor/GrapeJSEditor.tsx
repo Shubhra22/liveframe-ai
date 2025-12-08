@@ -69,13 +69,16 @@ export const GrapeJSEditor = forwardRef<GrapeJSEditorRef, GrapeJSEditorProps>(
             },
           },
 
-          // Canvas settings - inject fonts into iframe
+          // Canvas settings - use email-safe fonts only (no custom fonts)
           canvas: {
             styles: [
-              'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&display=swap',
               'data:text/css;base64,' + btoa(`
-                * { font-family: 'Space Grotesk', Helvetica, Arial, sans-serif !important; }
-                body { font-family: 'Space Grotesk', Helvetica, Arial, sans-serif !important; }
+                /* Email-safe fonts for accurate preview */
+                body { 
+                  font-family: Helvetica, Arial, sans-serif;
+                  -webkit-font-smoothing: antialiased;
+                  -moz-osx-font-smoothing: grayscale;
+                }
               `),
             ],
             scripts: [],
