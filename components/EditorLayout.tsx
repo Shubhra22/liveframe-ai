@@ -3,6 +3,8 @@ import { LiveCanvas } from './LiveCanvas';
 import { ArrowLeftRight, Code, Eye, MonitorPlay, Loader2, Mail, Sparkles } from 'lucide-react';
 import { convertHtmlToEmail } from '../services/geminiService';
 import { toast } from './ui/Toaster';
+import { TemplateManager } from './TemplateManager';
+import { EmailTemplate } from '../services/templateService';
 
 interface EditorLayoutProps {
   initialCode: string;
@@ -17,6 +19,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
   const [isConverting, setIsConverting] = useState(false);
   const [splitPosition, setSplitPosition] = useState(35); // percentage
   const [isDragging, setIsDragging] = useState(false);
+  const [currentTemplateId, setCurrentTemplateId] = useState<string | undefined>();
   const liveCanvasRef = React.useRef<any>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const isDraggingRef = React.useRef(false);
@@ -103,6 +106,23 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
     }
   };
 
+  const handleLoadTemplate = (template: EmailTemplate) => {
+    setLocalCode(template.html);
+    setCodeToRender(template.html);
+    onCodeChange(template.html);
+    toast.success(`Loaded "${template.name}"`);
+  };
+
+  const handleSaveTemplate = () => {
+    // Get current editor state
+    const editor = liveCanvasRef.current?.getEditor?.();
+    return {
+      html: localCode,
+      css: editor?.getCss?.() || '',
+      components: editor?.getComponents?.() || {},
+    };
+  };
+
   return (
     <div className="flex flex-col h-full bg-neutral-950">
       {/* Toolbar */}
@@ -138,6 +158,13 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
                <span>Syncing...</span>
              </div>
           )}
+          
+          <TemplateManager
+            onLoad={handleLoadTemplate}
+            onSave={handleSaveTemplate}
+            currentTemplateId={currentTemplateId}
+            onTemplateIdChange={setCurrentTemplateId}
+          />
           
           <button 
             onClick={handleConvertToEmail}
