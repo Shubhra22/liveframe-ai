@@ -7,7 +7,7 @@ interface LayersPanelProps {
 
 export const LayersPanel: React.FC<LayersPanelProps> = ({ onClose }) => {
   return (
-    <div className="w-64 bg-neutral-900 border-l border-neutral-800 overflow-y-auto animate-in slide-in-from-right duration-200">
+    <div className="w-64 h-full bg-neutral-900 border-l border-neutral-800 overflow-y-auto animate-in slide-in-from-right duration-200">
       <div className="border-b border-neutral-800">
         <div className="p-3 flex items-center justify-between">
           <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">

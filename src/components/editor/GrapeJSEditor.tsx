@@ -2,7 +2,7 @@ import { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import grapesjs from 'grapesjs';
 import 'grapesjs/dist/css/grapes.min.css';
 import gjsPresetNewsletter from 'grapesjs-preset-newsletter';
-import '../grapesjs-custom.css';
+import '../../styles/grapesjs-custom.css';
 import { uploadImage, replaceBase64ImagesWithUrls } from '../../services/imageUploadService';
 
 interface GrapeJSEditorProps {

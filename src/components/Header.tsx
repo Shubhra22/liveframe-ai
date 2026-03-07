@@ -13,7 +13,7 @@ export const Header: React.FC = () => {
       <div className="flex items-center gap-4 text-sm text-neutral-400">
         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 rounded-full border border-neutral-700/50">
           <Wand2 size={14} className="text-purple-400" />
-          <span>Gemini 2.5 Active</span>
+          <span>Azure OpenAI</span>
         </div>
       </div>
     </header>

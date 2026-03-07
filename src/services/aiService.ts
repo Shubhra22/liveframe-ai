@@ -1,6 +1,5 @@
 import OpenAI from "openai";
 import { AiActionType, AiResponse } from '../types';
-import { MODEL_NAMES } from '../constants';
 
 const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
 const endpoint = import.meta.env.VITE_OPENAI_ENDPOINT;
@@ -128,5 +127,59 @@ export const convertHtmlToEmail = async (htmlCode: string): Promise<string> => {
   } catch (e: any) {
     console.error("Conversion Error:", e);
     throw new Error(e.message || "Failed to convert code");
+  }
+};
+
+
+export const generateEmailDesign = async (
+  prompt: string,
+  onChunk?: (chunk: string) => void
+): Promise<string> => {
+  if (!client) throw new Error("AI service not initialized. Add VITE_OPENAI_API_KEY and VITE_OPENAI_ENDPOINT to .env");
+
+  const systemPrompt = `You are an expert email template designer. Generate beautiful, production-ready HTML email designs.
+
+Rules:
+1. Use inline CSS styles only (no <style> blocks, no external stylesheets).
+2. Use table-based layouts for email client compatibility (Outlook, Gmail, Apple Mail).
+3. Use web-safe fonts (Arial, Helvetica, Georgia, Times New Roman, Verdana).
+4. Include proper email structure: DOCTYPE, html, head with meta charset/viewport, body.
+5. Use max-width of 600px for the main container, centered with margin: 0 auto.
+6. Include placeholder images from https://picsum.photos with appropriate dimensions.
+7. Use a clean, modern design with good spacing and visual hierarchy.
+8. Make buttons with table-based bulletproof buttons (VML for Outlook not required).
+9. Output ONLY the raw HTML code. No markdown fencing, no explanations.`;
+
+  try {
+    const completion = await client.chat.completions.create({
+      messages: [
+        { role: "developer", content: systemPrompt },
+        { role: "user", content: `Design an email template for: ${prompt}` }
+      ],
+      model: deploymentName || "gpt-5.1-codex-max",
+      stream: !!onChunk,
+    });
+
+    if (onChunk) {
+      // Handle streaming response
+      let fullText = '';
+      const stream = completion as AsyncIterable<any>;
+      for await (const chunk of stream) {
+        const delta = chunk.choices?.[0]?.delta?.content || '';
+        if (delta) {
+          fullText += delta;
+          onChunk(fullText);
+        }
+      }
+      return fullText.replace(/^```html\s*/, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
+    } else {
+      const result = completion as OpenAI.Chat.Completions.ChatCompletion;
+      let text = result.choices[0]?.message?.content || "";
+      text = text.replace(/^```html\s*/, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
+      return text;
+    }
+  } catch (e: any) {
+    console.error("Email Generation Error:", e);
+    throw new Error(e.message || "Failed to generate email design");
   }
 };

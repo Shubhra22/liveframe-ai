@@ -1,60 +1,72 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
-
 # LiveFrame AI - Email Template Editor
 
-A minimal email template editor powered by GrapeJS and Gemini AI.
+A visual email template editor powered by GrapeJS and Azure OpenAI.
 
 ## Features
 
-- **Split View Editor**: Code on left, live preview on right
-- **Visual Editing**: Click and edit elements directly in the canvas with GrapeJS
-- **Collapsible Panels**: 
-  - Blocks panel (collapsed by default) - Drag-and-drop email components
-  - Layers panel (collapsed by default) - View document hierarchy and styles
-- **AI-Powered**: Convert any HTML to email-ready format with Gemini
-- **Responsive Preview**: Toggle between desktop and mobile views
+- Split view editor: code on left, live GrapeJS canvas on right
+- Visual drag-and-drop editing with email-friendly components
+- AI-powered email generation from text prompts
+- Convert any HTML to email-ready format with AI
+- Responsive preview (desktop/mobile)
+- Template save/load via Supabase
+- Image upload via Cloudinary
 
-## Run Locally
+## Setup
 
-**Prerequisites:** Node.js
+```bash
+npm install
+```
 
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
+Copy `.env.example` to `.env` and fill in your keys:
 
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+```bash
+cp .env.example .env
+```
 
-3. Run the app:
-   ```bash
-   npm run dev
-   ```
+Required env vars:
+- `VITE_OPENAI_ENDPOINT` — Azure OpenAI endpoint
+- `VITE_OPENAI_API_KEY` — Azure OpenAI API key
+- `VITE_OPENAI_DEPLOYMENT` — Model deployment name
+- `VITE_SUPABASE_URL` — Supabase project URL
+- `VITE_SUPABASE_ANON_KEY` — Supabase anon key
 
-## Usage
+```bash
+npm run dev
+```
 
-1. **Paste HTML** in the left code editor
-2. **Click "Run"** to render in the live canvas
-3. **Edit visually** by clicking elements in the preview
-4. **Use "Blocks"** button to show drag-and-drop components
-5. **Use "Layers"** button to see document structure and modify styles
-6. **Click "Make Email Ready"** to optimize for email clients with AI
+## Project Structure
 
-## UI Controls
-
-- **Blocks Button**: Show/hide component library (collapsed by default)
-- **Layers Button**: Show/hide document hierarchy (collapsed by default)
-- **Device Toggle**: Switch between desktop/mobile preview
-- **Visibility Toggle**: Show/hide component borders in editor
+```
+src/
+├── components/
+│   ├── editor/          # GrapeJS editor, toolbar, layers panel
+│   ├── ui/              # Toaster
+│   ├── AiGenerateModal  # AI email generation modal
+│   ├── EditorLayout     # Main split-view layout
+│   ├── FloatingMenu     # Context menu for selected elements
+│   ├── Header           # App header
+│   ├── LiveCanvas       # GrapeJS canvas wrapper
+│   └── TemplateManager  # Save/load templates
+├── services/
+│   ├── aiService        # Azure OpenAI integration
+│   ├── imageUploadService
+│   ├── supabaseClient
+│   └── templateService
+├── styles/
+│   └── grapesjs-custom.css
+├── types.ts
+├── constants.ts
+├── App.tsx
+└── index.tsx
+```
 
 ## Tech Stack
 
-- React + TypeScript
-- GrapeJS (visual editor)
-- GrapeJS Newsletter Preset (email-friendly components)
-- Gemini AI (HTML to email conversion)
-- Vite (build tool)
-- Tailwind CSS (styling)
-
-View your app in AI Studio: https://ai.studio/apps/drive/1aGwIK1WJ91hKOvTjpTeW-6AzO-MuIXo4
+- React 19 + TypeScript
+- GrapeJS + Newsletter Preset
+- Azure OpenAI (GPT)
+- Vite
+- Tailwind CSS
+- Supabase
+- Cloudinary

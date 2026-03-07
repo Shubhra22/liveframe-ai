@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { LiveCanvas } from './LiveCanvas';
-import { ArrowLeftRight, Code, Eye, MonitorPlay, Loader2, Mail, Sparkles } from 'lucide-react';
-import { convertHtmlToEmail } from '../services/geminiService';
+import { ArrowLeftRight, Code, Eye, MonitorPlay, Loader2, Sparkles, Wand2 } from 'lucide-react';
+import { convertHtmlToEmail } from '../services/aiService';
 import { toast } from './ui/Toaster';
 import { TemplateManager } from './TemplateManager';
+import { AiGenerateModal } from './AiGenerateModal';
 import { EmailTemplate } from '../services/templateService';
 
 interface EditorLayoutProps {
@@ -20,6 +21,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
   const [splitPosition, setSplitPosition] = useState(35); // percentage
   const [isDragging, setIsDragging] = useState(false);
   const [currentTemplateId, setCurrentTemplateId] = useState<string | undefined>();
+  const [showAiGenerate, setShowAiGenerate] = useState(false);
   const liveCanvasRef = React.useRef<any>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const isDraggingRef = React.useRef(false);
@@ -123,6 +125,13 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
     };
   };
 
+  const handleAiGenerated = (html: string) => {
+    setLocalCode(html);
+    setCodeToRender(html);
+    onCodeChange(html);
+    toast.success("AI design loaded into editor");
+  };
+
   return (
     <div className="flex flex-col h-full bg-neutral-950">
       {/* Toolbar */}
@@ -165,6 +174,14 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
             currentTemplateId={currentTemplateId}
             onTemplateIdChange={setCurrentTemplateId}
           />
+
+          <button
+            onClick={() => setShowAiGenerate(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white text-xs font-bold rounded-md transition-all shadow-lg shadow-blue-900/20"
+          >
+            <Wand2 size={14} />
+            Generate with AI
+          </button>
           
           <button 
             onClick={handleConvertToEmail}
@@ -252,6 +269,13 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
           </div>
         </div>
       </div>
+
+      {/* AI Generate Modal */}
+      <AiGenerateModal
+        isOpen={showAiGenerate}
+        onClose={() => setShowAiGenerate(false)}
+        onGenerated={handleAiGenerated}
+      />
     </div>
   );
 };

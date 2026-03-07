@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { SelectionState, AiActionType } from '../types';
 import { Wand2, Type, Image as ImageIcon, Trash2, X, RefreshCw, Check, Edit3, MoveHorizontal, AlignLeft, Bold, Link as LinkIcon } from 'lucide-react';
-import { generateText, generateImage } from '../services/geminiService';
+import { generateText, generateImage } from '../services/aiService';
 import { toast } from './ui/Toaster';
 
 interface FloatingMenuProps {
