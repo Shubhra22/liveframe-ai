@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import grapesjs, { Editor as GjsEditorType } from 'grapesjs';
 import Editor, { Canvas, WithEditor } from '@grapesjs/react';
 import 'grapesjs/dist/css/grapes.min.css';
@@ -6,7 +6,7 @@ import gjsPresetNewsletter from 'grapesjs-preset-newsletter';
 import '../../styles/grapesjs-custom.css';
 import { uploadImage, replaceBase64ImagesWithUrls } from '../../services/imageUploadService';
 import { EditorToolbar } from './EditorToolbar';
-import { BlocksPanel } from './BlocksPanel'
+import { BlocksPanel } from './BlocksPanel';
 import { LayersPanel } from './LayersPanel';
 
 interface GrapeJSEditorProps {
@@ -16,9 +16,15 @@ interface GrapeJSEditorProps {
 }
 
 export const GrapeJSEditor: React.FC<GrapeJSEditorProps> = ({ html, onHtmlChange, onEditorReady }) => {
+  const editorRef = useRef<GjsEditorType | null>(null);
   const updateTimeoutRef = useRef<any>(null);
   const isUpdatingRef = useRef(false);
   const isInitializedRef = useRef(false);
+  const onHtmlChangeRef = useRef(onHtmlChange);
+  const lastLoadedHtmlRef = useRef<string>('');
+
+  // Keep callback ref fresh
+  onHtmlChangeRef.current = onHtmlChange;
 
   const extractBodyContent = (rawHtml: string): string => {
     const parser = new DOMParser();
@@ -34,11 +40,6 @@ export const GrapeJSEditor: React.FC<GrapeJSEditorProps> = ({ html, onHtmlChange
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <title>Email Template</title>
-    <!--[if mso]>
-    <style type="text/css">
-        body, table, td {font-family: Helvetica, Arial, sans-serif !important;}
-    </style>
-    <![endif]-->
 </head>
 <body style="margin: 0; padding: 0; background-color: #f6f6f8; font-family: Helvetica, Arial, sans-serif;">
 ${bodyHtml}
@@ -46,19 +47,37 @@ ${bodyHtml}
 </html>`;
   };
 
-  const handleEditorReady = useCallback((editor: GjsEditorType) => {
-    // Load initial HTML content
-    if (html) {
-      const bodyContent = extractBodyContent(html);
-      editor.setComponents(bodyContent);
+  const loadHtmlIntoEditor = useCallback((editor: GjsEditorType, rawHtml: string) => {
+    if (!rawHtml) return;
+    isUpdatingRef.current = true;
+    const bodyContent = extractBodyContent(rawHtml);
+    editor.setComponents(bodyContent);
 
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      const styleTags = doc.querySelectorAll('style');
-      let cssContent = '';
-      styleTags.forEach((style) => { cssContent += style.textContent || ''; });
-      if (cssContent) editor.setStyle(cssContent);
-    }
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(rawHtml, 'text/html');
+    const styleTags = doc.querySelectorAll('style');
+    let cssContent = '';
+    styleTags.forEach((style) => { cssContent += style.textContent || ''; });
+    if (cssContent) editor.setStyle(cssContent);
+
+    lastLoadedHtmlRef.current = rawHtml;
+    setTimeout(() => { isUpdatingRef.current = false; }, 200);
+  }, []);
+
+  // Watch for external html prop changes and push them into the editor
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor || !isInitializedRef.current) return;
+    // Skip if this html came from the editor itself (avoid loop)
+    if (html === lastLoadedHtmlRef.current) return;
+    loadHtmlIntoEditor(editor, html);
+  }, [html, loadHtmlIntoEditor]);
+
+  const handleEditorReady = useCallback((editor: GjsEditorType) => {
+    editorRef.current = editor;
+
+    // Load initial HTML
+    loadHtmlIntoEditor(editor, html);
 
     // Auto-upload base64 images on asset add
     editor.on('asset:add', async (asset: any) => {
@@ -103,7 +122,7 @@ ${bodyHtml}
       }
     });
 
-    // Debounced change handler
+    // Debounced change handler — pushes editor changes back to parent
     const handleUpdate = () => {
       if (isUpdatingRef.current || !isInitializedRef.current) return;
       if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
@@ -125,8 +144,10 @@ ${bodyHtml}
             .replace(/\s*box-sizing:\s*border-box;\s*/g, '')
             .replace(/\s*style="\s*"/g, '');
 
+          const wrapped = wrapInEmailDoc(updatedHtml);
+          lastLoadedHtmlRef.current = wrapped;
           isUpdatingRef.current = true;
-          onHtmlChange(wrapInEmailDoc(updatedHtml));
+          onHtmlChangeRef.current(wrapped);
           setTimeout(() => { isUpdatingRef.current = false; }, 100);
         } catch (e) {
           console.error('Update handler error:', e);
@@ -137,12 +158,13 @@ ${bodyHtml}
     editor.on('component:add', handleUpdate);
     editor.on('component:remove', handleUpdate);
     editor.on('component:update', handleUpdate);
+    editor.on('style:custom', handleUpdate);
 
-    // Mark as initialized after a tick so initial setComponents doesn't trigger handleUpdate
-    setTimeout(() => { isInitializedRef.current = true; }, 100);
+    // Mark initialized after initial load settles
+    setTimeout(() => { isInitializedRef.current = true; }, 300);
 
     onEditorReady?.(editor);
-  }, []);
+  }, []); // intentionally empty — uses refs for fresh values
 
   const gjsOptions: any = {
     height: '100%',

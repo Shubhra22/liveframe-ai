@@ -45,35 +45,24 @@ export const LayersPanel: React.FC = () => {
         ))}
       </div>
       <div className="flex-1 overflow-y-auto">
-        {/* Styles tab */}
-        <div className={activeTab === 'styles' ? '' : 'hidden'}>
+        {/* All providers stay mounted so GrapeJS managers remain registered.
+            We toggle visibility with CSS display instead of unmounting. */}
+        <div style={{ display: activeTab === 'styles' ? 'block' : 'none' }}>
           <SelectorsProvider>
-            {({ Container: SelectorsContainer }) => (
-              <SelectorsContainer><></></SelectorsContainer>
-            )}
+            {({ Container }) => <Container>{null}</Container>}
           </SelectorsProvider>
           <StylesProvider>
-            {({ Container: StylesContainer }) => (
-              <StylesContainer><></></StylesContainer>
-            )}
+            {({ Container }) => <Container>{null}</Container>}
           </StylesProvider>
         </div>
-
-        {/* Layers tab */}
-        <div className={activeTab === 'layers' ? '' : 'hidden'}>
+        <div style={{ display: activeTab === 'layers' ? 'block' : 'none' }}>
           <LayersProvider>
-            {({ Container: LayersContainer }) => (
-              <LayersContainer><></></LayersContainer>
-            )}
+            {({ Container }) => <Container>{null}</Container>}
           </LayersProvider>
         </div>
-
-        {/* Traits/Settings tab */}
-        <div className={activeTab === 'traits' ? '' : 'hidden'}>
+        <div style={{ display: activeTab === 'traits' ? 'block' : 'none' }}>
           <TraitsProvider>
-            {({ Container: TraitsContainer }) => (
-              <TraitsContainer><></></TraitsContainer>
-            )}
+            {({ Container }) => <Container>{null}</Container>}
           </TraitsProvider>
         </div>
       </div>
