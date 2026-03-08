@@ -11,7 +11,6 @@ interface EditorLayoutProps {
   initialCode: string;
   onCodeChange: (code: string) => void;
 }
-
 export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeChange }) => {
   const [activeTab, setActiveTab] = useState<'split' | 'code' | 'preview'>('split');
   const [localCode, setLocalCode] = useState(initialCode);
@@ -204,6 +203,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
       {/* Workspace */}
       <div ref={containerRef} className="flex-1 flex overflow-hidden relative">
         {/* Code Editor Section */}
+        {/* Code Editor Section */}
         <div 
           className={`
             flex bg-[#1e1e1e]
@@ -212,17 +212,6 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
           `}
           style={activeTab === 'split' ? { width: `${splitPosition}%`, flexShrink: 0 } : undefined}
         >
-          {/* Blocks Panel - Always Visible */}
-          <div className="w-64 bg-neutral-900 border-r border-neutral-800 overflow-y-auto flex flex-col">
-            <div className="p-3 border-b border-neutral-800">
-              <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">Components</h3>
-              <p className="text-xs text-neutral-600 mt-1">Drag to canvas</p>
-            </div>
-            <div id="editor-blocks-container" className="flex-1 p-2">
-              {/* Blocks will be populated by GrapeJS */}
-            </div>
-          </div>
-
           {/* Code Editor */}
           <div className="flex-1 flex flex-col">
             <div className="px-4 py-2 text-xs font-mono text-neutral-500 border-b border-neutral-800 flex justify-between bg-[#252525]">
@@ -238,7 +227,6 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
             />
           </div>
         </div>
-
         {/* Resizer */}
         {activeTab === 'split' && (
           <div
