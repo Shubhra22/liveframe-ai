@@ -10,12 +10,6 @@ export const Header: React.FC = () => {
         </div>
         <h1 className="font-bold text-lg tracking-tight">LiveFrame <span className="text-blue-500">AI</span></h1>
       </div>
-      <div className="flex items-center gap-4 text-sm text-neutral-400">
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 rounded-full border border-neutral-700/50">
-          <Wand2 size={14} className="text-purple-400" />
-          <span>Azure OpenAI</span>
-        </div>
-      </div>
     </header>
   );
 };

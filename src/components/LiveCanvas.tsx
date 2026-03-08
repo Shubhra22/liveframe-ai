@@ -19,7 +19,7 @@ export const LiveCanvas = forwardRef<LiveCanvasRef, LiveCanvasProps>(({ html, on
   }));
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full relative">
       <GrapeJSEditor
         html={html}
         onHtmlChange={onHtmlChange}

@@ -202,11 +202,11 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
         {/* Live Preview */}
         <div 
           className={`
-            flex-col bg-neutral-100 relative flex-1
+            flex-col relative flex-1
             ${activeTab === 'code' ? 'hidden' : 'flex'}
           `}
         >
-          <div className="flex-1 overflow-hidden bg-neutral-100">
+          <div className="flex-1 relative">
             <LiveCanvas 
               ref={liveCanvasRef}
               html={codeToRender} 
