@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { LiveCanvas } from './LiveCanvas';
-import { ArrowLeftRight, Code, Eye, MonitorPlay, Loader2, Sparkles, Wand2 } from 'lucide-react';
+import { ArrowLeftRight, Code, Eye, Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { convertHtmlToEmail } from '../services/aiService';
 import { toast } from './ui/Toaster';
-import { TemplateManager } from './TemplateManager';
 import { AiGenerateModal } from './AiGenerateModal';
-import { EmailTemplate } from '../services/templateService';
 
 interface EditorLayoutProps {
   initialCode: string;
@@ -17,9 +15,8 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
   const [codeToRender, setCodeToRender] = useState(initialCode);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
-  const [splitPosition, setSplitPosition] = useState(35); // percentage
+  const [splitPosition, setSplitPosition] = useState(35);
   const [isDragging, setIsDragging] = useState(false);
-  const [currentTemplateId, setCurrentTemplateId] = useState<string | undefined>();
   const [showAiGenerate, setShowAiGenerate] = useState(false);
   const liveCanvasRef = React.useRef<any>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -78,13 +75,6 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
     return () => clearTimeout(timer);
   }, [localCode, codeToRender, onCodeChange]);
 
-  // Handle manual run
-  const handleApplyCode = () => {
-    setCodeToRender(localCode);
-    onCodeChange(localCode);
-    setIsSyncing(false);
-  };
-
   const handleCanvasUpdate = (newHtml: string) => {
     setLocalCode(newHtml);
     setCodeToRender(newHtml); 
@@ -105,23 +95,6 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
     } finally {
       setIsConverting(false);
     }
-  };
-
-  const handleLoadTemplate = (template: EmailTemplate) => {
-    setLocalCode(template.html);
-    setCodeToRender(template.html);
-    onCodeChange(template.html);
-    toast.success(`Loaded "${template.name}"`);
-  };
-
-  const handleSaveTemplate = () => {
-    // Get current editor state
-    const editor = liveCanvasRef.current?.getEditor?.();
-    return {
-      html: localCode,
-      css: editor?.getCss?.() || '',
-      components: editor?.getComponents?.() || {},
-    };
   };
 
   const handleAiGenerated = (html: string) => {
@@ -166,13 +139,6 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
                <span>Syncing...</span>
              </div>
           )}
-          
-          <TemplateManager
-            onLoad={handleLoadTemplate}
-            onSave={handleSaveTemplate}
-            currentTemplateId={currentTemplateId}
-            onTemplateIdChange={setCurrentTemplateId}
-          />
 
           <button
             onClick={() => setShowAiGenerate(true)}
@@ -188,22 +154,14 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ initialCode, onCodeC
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 text-white text-xs font-bold rounded-md transition-all shadow-lg shadow-purple-900/20"
           >
             {isConverting ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-            Make Email Ready
-          </button>
-
-          <button 
-            onClick={handleApplyCode}
-            className="flex items-center gap-2 px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-bold rounded-md transition-colors border border-neutral-700"
-          >
-            <MonitorPlay size={14} /> Run
+            Email Ready
           </button>
         </div>
       </div>
 
       {/* Workspace */}
       <div ref={containerRef} className="flex-1 flex overflow-hidden relative">
-        {/* Code Editor Section */}
-        {/* Code Editor Section */}
+        {/* Code Editor */}
         <div 
           className={`
             flex bg-[#1e1e1e]
